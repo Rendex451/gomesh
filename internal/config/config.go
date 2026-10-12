@@ -1,4 +1,3 @@
-// Package config загружает и проверяет конфигурацию ноды gomesh.
 package config
 
 import (
@@ -15,8 +14,6 @@ import (
 // maxIfaceName — IFNAMSIZ (16) минус завершающий ноль.
 const maxIfaceName = 15
 
-// ErrInsecurePermissions означает, что файл с приватным ключом
-// доступен группе или всем.
 var ErrInsecurePermissions = errors.New("config file is accessible by group or others")
 
 // Config — конфигурация одной ноды.
@@ -24,13 +21,9 @@ type Config struct {
 	PrivateKey crypto.PrivateKey `toml:"private_key"`
 	ListenPort uint16            `toml:"listen_port"`
 	TunName    string            `toml:"tun_name"`
-	// TunAddress — адрес ноды на TUN с маской ВСЕГО overlay (10.99.1.1/16):
-	// ядро создаст маршрут на эту подсеть через TUN.
 	TunAddress netip.Prefix `toml:"tun_address"`
-	// Subnet — подсеть, которую нода анонсирует остальным (10.99.1.0/24).
 	Subnet netip.Prefix     `toml:"subnet"`
 	Seeds  []netip.AddrPort `toml:"seeds"`
-	// Peers — статические пиры для этапа 1; на этапе 3 их заменит gossip.
 	Peers []Peer `toml:"peers"`
 }
 
@@ -62,7 +55,6 @@ func Parse(data string) (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse: %w", err)
 	}
-	// Опечатка в имени ключа не должна молча превращаться в пустое значение.
 	if undecoded := md.Undecoded(); len(undecoded) > 0 {
 		keys := make([]string, len(undecoded))
 		for i, k := range undecoded {
@@ -77,7 +69,7 @@ func Parse(data string) (*Config, error) {
 }
 
 // CheckPermissions возвращает ErrInsecurePermissions, если файл
-// читаем группой или всеми. Это предупреждение, а не отказ в запуске.
+// читаем группой или всеми.
 func CheckPermissions(path string) error {
 	fi, err := os.Stat(path)
 	if err != nil {

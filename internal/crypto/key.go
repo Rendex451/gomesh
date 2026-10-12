@@ -1,4 +1,3 @@
-// Package crypto содержит ключи и криптографические сессии gomesh.
 package crypto
 
 import (
