@@ -25,8 +25,8 @@ func newKey(t *testing.T) (crypto.PrivateKey, crypto.PublicKey) {
 	return priv, pub
 }
 
-// validConfig каждый раз собирает новый конфиг: мутации в одном
-// тест-кейсе не должны протекать в другой через общие слайсы.
+// validConfig builds a fresh config each time: mutations in one
+// test case must not leak into another via shared slices.
 func validConfig(t *testing.T) Config {
 	t.Helper()
 	priv, _ := newKey(t)
@@ -50,7 +50,7 @@ func TestValidate(t *testing.T) {
 	tests := []struct {
 		name   string
 		mutate func(c *Config)
-		want   string // подстрока ошибки; пусто — ошибки быть не должно
+		want   string // error substring; empty means no error expected
 	}{
 		{"valid", func(*Config) {}, ""},
 		{"no seeds is fine", func(c *Config) { c.Seeds = nil }, ""},
@@ -87,7 +87,7 @@ func TestValidate(t *testing.T) {
 		}, "overlaps subnet"},
 		{"tun address is network address", func(c *Config) {
 			c.TunAddress = netip.MustParsePrefix("10.99.1.0/16")
-		}, "network address" },	
+		}, "network address"},
 	}
 
 	for _, tt := range tests {

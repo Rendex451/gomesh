@@ -1,4 +1,4 @@
-// Команда gomesh — mesh VPN поверх TUN.
+// Command gomesh is a mesh VPN over TUN.
 package main
 
 import (
@@ -14,9 +14,9 @@ import (
 )
 
 const usage = `usage:
-  gomesh genkey               сгенерировать приватный ключ
-  gomesh pubkey < private     вывести публичный ключ для приватного
-  gomesh check -config FILE   проверить конфиг`
+  gomesh genkey               generate a private key
+  gomesh pubkey < private     print the public key for a private key
+  gomesh check -config FILE   validate a config`
 
 func main() {
 	if err := run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr); err != nil {
@@ -25,8 +25,8 @@ func main() {
 	}
 }
 
-// run содержит всю логику main. Ввод-вывод передаётся явно,
-// поэтому команды тестируются без запуска бинарника.
+// run holds all of main's logic. I/O is passed explicitly,
+// so commands are testable without running the binary.
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) error {
 	if len(args) == 0 {
 		return errors.New("no command\n" + usage)
@@ -56,7 +56,7 @@ func cmdGenkey(stdout io.Writer) error {
 }
 
 func cmdPubkey(stdin io.Reader, stdout io.Writer) error {
-	// Ключ — 44 символа; лимит защищает от случайного `gomesh pubkey < /dev/zero`.
+	// A key is 44 chars; the limit guards against an accidental `gomesh pubkey < /dev/zero`.
 	data, err := io.ReadAll(io.LimitReader(stdin, 1024))
 	if err != nil {
 		return fmt.Errorf("read stdin: %w", err)
@@ -76,7 +76,7 @@ func cmdPubkey(stdin io.Reader, stdout io.Writer) error {
 func cmdCheck(args []string, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("check", flag.ContinueOnError)
 	flags.SetOutput(stderr)
-	path := flags.String("config", "", "путь к конфигу ноды")
+	path := flags.String("config", "", "path to the node config")
 	if err := flags.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return nil

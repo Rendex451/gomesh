@@ -28,8 +28,8 @@ func wgCmd(t *testing.T, stdin string, args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// Совместимость с WireGuard в обе стороны: ключи одного формата
-// и одна и та же кривая, значит, публичные ключи обязаны совпасть.
+// Two-way WireGuard compatibility: same key format
+// and the same curve, so the public keys must match.
 func TestKeysCompatibleWithWireGuard(t *testing.T) {
 	if _, err := exec.LookPath("wg"); err != nil {
 		t.Skip("wg is not installed")

@@ -11,30 +11,30 @@ import (
 	"github.com/Rendex451/gomesh/internal/crypto"
 )
 
-// maxIfaceName — IFNAMSIZ (16) минус завершающий ноль.
+// maxIfaceName is IFNAMSIZ (16) minus the trailing NUL.
 const maxIfaceName = 15
 
 var ErrInsecurePermissions = errors.New("config file is accessible by group or others")
 
-// Config — конфигурация одной ноды.
+// Config is the configuration of a single node.
 type Config struct {
 	PrivateKey crypto.PrivateKey `toml:"private_key"`
 	ListenPort uint16            `toml:"listen_port"`
 	TunName    string            `toml:"tun_name"`
-	TunAddress netip.Prefix `toml:"tun_address"`
-	Subnet netip.Prefix     `toml:"subnet"`
-	Seeds  []netip.AddrPort `toml:"seeds"`
-	Peers []Peer `toml:"peers"`
+	TunAddress netip.Prefix      `toml:"tun_address"`
+	Subnet     netip.Prefix      `toml:"subnet"`
+	Seeds      []netip.AddrPort  `toml:"seeds"`
+	Peers      []Peer            `toml:"peers"`
 }
 
-// Peer — статически заданный пир.
+// Peer is a statically configured peer.
 type Peer struct {
 	PublicKey crypto.PublicKey `toml:"public_key"`
 	Endpoint  netip.AddrPort   `toml:"endpoint"`
 	Subnets   []netip.Prefix   `toml:"subnets"`
 }
 
-// Load читает и проверяет конфиг из файла.
+// Load reads and validates a config from a file.
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -47,8 +47,8 @@ func Load(path string) (*Config, error) {
 	return cfg, nil
 }
 
-// Parse разбирает и проверяет конфиг из строки. Отделён от Load,
-// чтобы тесты не трогали файловую систему.
+// Parse parses and validates a config from a string. Separate from Load
+// so tests don't touch the filesystem.
 func Parse(data string) (*Config, error) {
 	var cfg Config
 	md, err := toml.Decode(data, &cfg)
@@ -68,8 +68,8 @@ func Parse(data string) (*Config, error) {
 	return &cfg, nil
 }
 
-// CheckPermissions возвращает ErrInsecurePermissions, если файл
-// читаем группой или всеми.
+// CheckPermissions returns ErrInsecurePermissions if the file
+// is readable by group or others.
 func CheckPermissions(path string) error {
 	fi, err := os.Stat(path)
 	if err != nil {
@@ -81,14 +81,14 @@ func CheckPermissions(path string) error {
 	return nil
 }
 
-// claim — подсеть и поле конфига, в котором она объявлена.
+// claim is a subnet and the config field that declares it.
 type claim struct {
 	field  string
 	prefix netip.Prefix
 }
 
-// Validate проверяет конфиг целиком и возвращает все найденные
-// проблемы сразу, объединённые через errors.Join.
+// Validate checks the whole config and returns all problems
+// found at once, combined via errors.Join.
 func (c *Config) Validate() error {
 	var errs []error
 	add := func(field, format string, args ...any) {
@@ -115,7 +115,7 @@ func (c *Config) Validate() error {
 		add("tun_name", "%q is longer than %d bytes", c.TunName, maxIfaceName)
 	}
 
-	// Собственные адреса. overlay известен, только если tun_address корректен.
+	// Own addresses. overlay is known only if tun_address is valid.
 	var overlay netip.Prefix
 	var claims []claim
 	if !c.TunAddress.IsValid() {
@@ -187,7 +187,7 @@ func (c *Config) Validate() error {
 		}
 	}
 
-	// Подсети не должны пересекаться: иначе маршрут неоднозначен.
+	// Subnets must not overlap: otherwise routing is ambiguous.
 	for i := range claims {
 		for j := i + 1; j < len(claims); j++ {
 			if claims[i].prefix.Overlaps(claims[j].prefix) {
@@ -200,7 +200,7 @@ func (c *Config) Validate() error {
 	return errors.Join(errs...)
 }
 
-// containsPrefix сообщает, что inner целиком лежит внутри outer.
+// containsPrefix reports whether inner lies entirely within outer.
 func containsPrefix(outer, inner netip.Prefix) bool {
 	return outer.Bits() <= inner.Bits() && outer.Contains(inner.Addr())
 }

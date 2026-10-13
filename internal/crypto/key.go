@@ -9,19 +9,19 @@ import (
 	"fmt"
 )
 
-// KeySize — размер ключа X25519 в байтах.
+// KeySize is the size of an X25519 key in bytes.
 const KeySize = 32
 
-// ErrInvalidKey возвращается при разборе некорректного ключа.
+// ErrInvalidKey is returned when parsing a malformed key.
 var ErrInvalidKey = errors.New("invalid key")
 
-// PrivateKey — приватный ключ X25519.
+// PrivateKey is an X25519 private key.
 type PrivateKey [KeySize]byte
 
-// PublicKey — публичный ключ X25519.
+// PublicKey is an X25519 public key.
 type PublicKey [KeySize]byte
 
-// GeneratePrivateKey создаёт новый случайный приватный ключ.
+// GeneratePrivateKey creates a new random private key.
 func GeneratePrivateKey() (PrivateKey, error) {
 	k, err := ecdh.X25519().GenerateKey(rand.Reader)
 	if err != nil {
@@ -33,26 +33,26 @@ func GeneratePrivateKey() (PrivateKey, error) {
 	return pk, nil
 }
 
-// ParsePrivateKey разбирает ключ в base64 (формат WireGuard, 44 символа).
+// ParsePrivateKey parses a base64 key (WireGuard format, 44 chars).
 func ParsePrivateKey(s string) (PrivateKey, error) {
 	var k PrivateKey
 	err := k.UnmarshalText([]byte(s))
 	return k, err
 }
 
-// ParsePublicKey разбирает ключ в base64 (формат WireGuard, 44 символа).
+// ParsePublicKey parses a base64 key (WireGuard format, 44 chars).
 func ParsePublicKey(s string) (PublicKey, error) {
 	var k PublicKey
 	err := k.UnmarshalText([]byte(s))
 	return k, err
 }
 
-// ECDH возвращает ключ в виде, пригодном для crypto/ecdh.
+// ECDH returns the key in a form usable by crypto/ecdh.
 func (k PrivateKey) ECDH() (*ecdh.PrivateKey, error) {
 	return ecdh.X25519().NewPrivateKey(k[:])
 }
 
-// PublicKey вычисляет публичный ключ, соответствующий приватному.
+// PublicKey computes the public key for the private key.
 func (k PrivateKey) PublicKey() (PublicKey, error) {
 	priv, err := k.ECDH()
 	if err != nil {
@@ -64,49 +64,49 @@ func (k PrivateKey) PublicKey() (PublicKey, error) {
 	return pub, nil
 }
 
-// IsZero сообщает, что ключ не задан. Сравнение за постоянное время,
-// чтобы по времени ответа нельзя было ничего узнать о секрете.
+// IsZero reports whether the key is unset. Constant-time comparison,
+// so response timing reveals nothing about the secret.
 func (k PrivateKey) IsZero() bool {
 	var zero PrivateKey
 	return subtle.ConstantTimeCompare(k[:], zero[:]) == 1
 }
 
-// Base64 возвращает ключ в формате WireGuard. Вызывать только там,
-// где ключ действительно нужно показать (gomesh genkey).
+// Base64 returns the key in WireGuard format. Call it only where
+// the key really must be shown (gomesh genkey).
 func (k PrivateKey) Base64() string {
 	return base64.StdEncoding.EncodeToString(k[:])
 }
 
-// String скрывает ключ при выводе через fmt и slog (%v, %s, %+v, %x).
+// String hides the key when printed via fmt and slog (%v, %s, %+v, %x).
 func (k PrivateKey) String() string { return "PrivateKey(hidden)" }
 
-// GoString скрывает ключ при выводе через %#v.
+// GoString hides the key when printed via %#v.
 func (k PrivateKey) GoString() string { return k.String() }
 
-// UnmarshalText позволяет декодерам TOML и JSON заполнять ключ из строки.
+// UnmarshalText lets TOML and JSON decoders fill the key from a string.
 func (k *PrivateKey) UnmarshalText(text []byte) error {
 	return decodeKey((*[KeySize]byte)(k), text)
 }
 
-// IsZero сообщает, что ключ не задан.
+// IsZero reports whether the key is unset.
 func (k PublicKey) IsZero() bool { return k == PublicKey{} }
 
-// String возвращает ключ в base64: публичный ключ скрывать не нужно.
+// String returns the key in base64: a public key needn't be hidden.
 func (k PublicKey) String() string {
 	return base64.StdEncoding.EncodeToString(k[:])
 }
 
-// MarshalText кодирует ключ в base64.
+// MarshalText encodes the key in base64.
 func (k PublicKey) MarshalText() ([]byte, error) {
 	return []byte(k.String()), nil
 }
 
-// UnmarshalText позволяет декодерам TOML и JSON заполнять ключ из строки.
+// UnmarshalText lets TOML and JSON decoders fill the key from a string.
 func (k *PublicKey) UnmarshalText(text []byte) error {
 	return decodeKey((*[KeySize]byte)(k), text)
 }
 
-// decodeKey декодирует base64 без аллокаций: длина известна заранее.
+// decodeKey decodes base64 without allocations: the length is known in advance.
 func decodeKey(dst *[KeySize]byte, text []byte) error {
 	want := base64.StdEncoding.EncodedLen(KeySize) // 44
 	if len(text) != want {

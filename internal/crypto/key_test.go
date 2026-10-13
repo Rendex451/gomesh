@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// Тестовые векторы из RFC 7748, раздел 6.1.
+// Test vectors from RFC 7748, section 6.1.
 func TestPublicKeyRFC7748(t *testing.T) {
 	tests := []struct {
 		name, priv, pub string
